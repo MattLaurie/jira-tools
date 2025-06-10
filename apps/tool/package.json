@@ -1,0 +1,47 @@
+{
+  "name": "tool",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx ./src/index.ts",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "with-env": "dotenv -e .env --"
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "^13.1.0",
+    "commander": "^13.1.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.5.0",
+    "safe-stable-stringify": "^2.5.0"
+  },
+  "devDependencies": {
+    "@blaaah/eslint-config": "workspace:*",
+    "@blaaah/prettier-config": "workspace:*",
+    "@blaaah/typescript-config": "workspace:*",
+    "@blaaah/jira-node": "workspace:*",
+    "@types/node": "^22.13.5",
+    "dotenv-cli": "^8.0.0",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  },
+  "prettier": "@blaaah/prettier-config"
+}
