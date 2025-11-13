@@ -7,7 +7,8 @@ import { readJiraConfig } from './config';
 const config = readJiraConfig();
 const client = new JiraClient(config);
 
-const jql = 'project = "EXPL" AND parent IN ("EXPL-7913", "EXPL-7914", "EXPL-7915", "EXPL-7917") ORDER BY created DESC';
+// const jql = 'project = "EXPL" AND parent IN ("EXPL-7913", "EXPL-7914", "EXPL-7915", "EXPL-7917") ORDER BY created DESC';
+const jql = 'project = "EXPL" AND parent IN ("EXPL-7913", "EXPL-7914", "EXPL-7915", "EXPL-7917") AND resolutiondate < \'2025/06/30 23:59\' ORDER BY created DESC';
 
 const results: Issue[] = [];
 for await (const issues of client.getIssues(jql)) {

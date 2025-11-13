@@ -2,7 +2,7 @@ import type { components, operations, paths } from './schema';
 import type { JiraConfig } from './config';
 import createClient from 'openapi-fetch';
 
-export type SearchQuery = operations['searchForIssuesUsingJql']['parameters']['query'];
+export type SearchQuery = operations['searchAndReconsileIssuesUsingJql']['parameters']['query'];
 export type SearchResults = components['schemas']['SearchResults'];
 export type Issue = components['schemas']['IssueBean'];
 
@@ -25,10 +25,11 @@ export class JiraClient {
     const query: SearchQuery = {
       jql,
       expand: 'changelog',
+      fields: ['*all']
     };
-    let more = true;
+    const more = true;
     while (more) {
-      const { data, response } = await client.GET('/rest/api/3/search', {
+      const { data, response } = await client.GET('/rest/api/3/search/jql', {
         params: {
           query,
         },
@@ -42,22 +43,16 @@ export class JiraClient {
         break;
       }
       yield data.issues;
-      const { maxResults, total, startAt } = data;
-      if (maxResults === undefined || total === undefined || startAt === undefined) {
-        console.log('no pagination', {
-          maxResults,
-          total,
-          startAt,
-        });
+
+      const { nextPageToken, isLast } = data;
+      if (!nextPageToken || isLast) {
         break;
       }
-      more = startAt + maxResults < total;
-      query.startAt = startAt + maxResults;
 
-      if (more) {
-        console.log('Waiting for 100ms.');
-        await this.sleep(100);
-      }
+      query.nextPageToken = nextPageToken;
+
+      console.log('Waiting for 100ms.');
+      await this.sleep(100);
     }
   }
 
