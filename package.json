@@ -15,9 +15,8 @@
     "lint:fix": "turbo run lint --continue -- --fix --cache --cache-location .cache/.eslintcache",
     "typecheck": "turbo run typecheck"
   },
-
   "dependencies": {
-    "turbo": "^2.5.0"
+    "turbo": "^2.7.2"
   },
   "devDependencies": {
     "@blaaah/prettier-config": "workspace:"
