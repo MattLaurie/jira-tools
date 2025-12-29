@@ -1,42 +1,36 @@
 {
   "name": "@blaaah/jira-node",
-  "version": "2.2.0",
+  "version": "1.0.0",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "pnpm with-env tsx ./src/debug.ts",
+    "generate": "openapi-typescript ./schema/swagger-v3.v3.json -o ./src/gen/schema.d.ts",
+    "build": "pnpm generate && tsdown",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
-    "generate": "openapi-typescript ./schema/swagger-v3.v3.json -o ./src/schema.d.ts",
-    "with-env": "dotenv -e .env --"
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "openapi-fetch": "catalog:"
   },
   "devDependencies": {
-    "@blaaah/eslint-config": "workspace:*",
+    "openapi-fetch": "catalog:",
+    "openapi-typescript": "catalog:",
     "@blaaah/prettier-config": "workspace:*",
+    "@blaaah/eslint-config": "workspace:*",
     "@blaaah/typescript-config": "workspace:*",
-    "@types/node": "^22.13.5",
-    "dotenv-cli": "^8.0.0",
-    "eslint": "catalog:",
-    "openapi-fetch": "^0.13.5",
-    "openapi-typescript": "^7.6.1",
+    "@types/node": "catalog:",
     "prettier": "catalog:",
-    "tsup": "^8.4.0",
-    "tsx": "^4.19.3",
-    "typescript": "catalog:",
-    "zod": "catalog:",
-    "zod-validation-error": "^3.4.0"
+    "eslint": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
   },
   "prettier": "@blaaah/prettier-config"
 }

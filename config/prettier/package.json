@@ -1,7 +1,6 @@
 {
   "name": "@blaaah/prettier-config",
   "private": true,
-  "version": "0.1.0",
   "type": "module",
   "exports": {
     ".": "./index.js"
@@ -12,12 +11,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.4.2",
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.0",
     "prettier": "catalog:"
   },
   "devDependencies": {
     "@blaaah/typescript-config": "workspace:*",
-    "@types/node": "^22.15.29",
+    "@types/node": "catalog:",
     "typescript": "catalog:"
   },
   "prettier": "@blaaah/prettier-config"

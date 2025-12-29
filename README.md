@@ -27,10 +27,23 @@ pnpm build
 
 ## Examples
 
-Find all tickets in `EXPL` project with epic of `EXPL-7913`:
+```shell
+node apps/tool analysis lead-cycle -h                                                                                                             mainvia  v22.21.1 took 3s
+Usage: tool analysis lead-cycle [options] <project> [period]
+
+Lead and cycle times for a given project over a given time period
+
+Arguments:
+  project              the Jira project name
+  period               the time period ("week", "month", "quarter") (default: "quarter")
+
+Options:
+  -o, --output <file>  the output file
+  -h, --help           display help for command
+``` 
 
 ```shell
-node apps/tool issues search 'project = "EXPL" AND parent IN ("EXPL-7913") ORDER BY created DESC'
+node apps/tool analysis lead-cycle EXPL quarter
 ```
 
 ## Thanks

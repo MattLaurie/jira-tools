@@ -3,6 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "license": "MIT",
+  "engines": {
+    "node": "^22.21.0",
+    "pnpm": "^10.8.0"
+  },
+  "packageManager": "pnpm@10.8.1",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -21,6 +26,5 @@
   "devDependencies": {
     "@blaaah/prettier-config": "workspace:"
   },
-  "packageManager": "pnpm@10.8.1",
   "prettier": "@blaaah/prettier-config"
 }

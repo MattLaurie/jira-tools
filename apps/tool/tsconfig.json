@@ -1,13 +1,5 @@
 {
-  "extends": "@blaaah/typescript-config/base.json",
-  "compilerOptions": {
-    "noEmit": false,
-    "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
-  },
-  "include": ["src", "*.ts"],
+  "extends": "@blaaah/typescript-config/compiled-package.json",
+  "include": ["src"],
   "exclude": ["node_modules"]
 }
