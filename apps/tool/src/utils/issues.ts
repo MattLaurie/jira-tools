@@ -1,7 +1,7 @@
 import * as console from 'node:console';
 import { z } from 'zod/v4';
 
-import { createClient } from '@blaaah/jira-node';
+import { Jira } from '@blaaah/jira';
 
 async function wait(milliseconds: number) {
   let timeoutId: NodeJS.Timeout | null;
@@ -81,22 +81,20 @@ export const IssueSchema = z.object({
 export type IssueType = z.infer<typeof IssueSchema>;
 
 export async function* getIssues(jql: string): AsyncGenerator<IssueType[]> {
-  const client = createClient({
+  const client = new Jira({
     baseUrl: process.env.JIRA_BASE_URL!,
-    username: process.env.JIRA_USERNAME!,
-    password: process.env.JIRA_PASSWORD!,
+    headers: {
+      Authorization: `Basic ${btoa(`${process.env.JIRA_USERNAME!}:${process.env.JIRA_PASSWORD!}`)}`,
+    },
   });
   let nextPageToken: string | undefined = undefined;
   do {
-    // @ts-ignore
-    const { data, response } = await client.GET('/rest/api/3/search/jql', {
-      params: {
-        query: {
-          jql,
-          nextPageToken,
-          expand: 'changelog',
-          fields: ['*all'],
-        },
+    const { data, response } = await client.searchAndReconsileIssuesUsingJql({
+      query: {
+        jql,
+        nextPageToken,
+        expand: 'changelog',
+        fields: ['*all'],
       },
     });
     if (response.status !== 200 || !data) {

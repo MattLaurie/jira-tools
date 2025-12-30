@@ -1,0 +1,5 @@
+apis:
+  jira:
+    root: ./schema/swagger-v3.json
+    x-openapi-ts:
+      output: ./src/gen/jira.d.ts

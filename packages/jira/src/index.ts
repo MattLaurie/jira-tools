@@ -1,0 +1,1 @@
+export { Client as Jira } from './gen/jira.client';

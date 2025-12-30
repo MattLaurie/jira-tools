@@ -1,0 +1,47 @@
+{
+  "name": "@blaaah/jira",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "schema": "openapi-typescript",
+    "client:jira": "openapi-fetch-gen --use-operation-id --input ./src/gen/jira.d.ts --output ./src/gen/jira.client.ts",
+    "generate": "pnpm schema && pnpm /client:.*/",
+    "build": "pnpm generate && tsdown",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "openapi-fetch": "catalog:"
+  },
+  "devDependencies": {
+    "@blaaah/eslint-config": "workspace:*",
+    "@blaaah/prettier-config": "workspace:*",
+    "@blaaah/typescript-config": "workspace:*",
+    "@moznion/openapi-fetch-gen": "^0.5.0",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "openapi-fetch": "catalog:",
+    "openapi-typescript": "catalog:",
+    "prettier": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:"
+  },
+  "prettier": "@blaaah/prettier-config"
+}

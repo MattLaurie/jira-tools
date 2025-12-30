@@ -14,7 +14,7 @@
   "dependencies": {
     "@commander-js/extra-typings": "^13.1.0",
     "commander": "^13.1.0",
-    "@blaaah/jira-node": "workspace:*",
+    "@blaaah/jira": "workspace:*",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "fast-csv": "^5.0.5",
