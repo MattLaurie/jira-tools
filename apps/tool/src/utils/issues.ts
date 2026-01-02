@@ -1,4 +1,3 @@
-import * as console from 'node:console';
 import fs from 'node:fs';
 import { z } from 'zod/v4';
 
@@ -109,11 +108,6 @@ export async function* getIssues(jql: string): AsyncGenerator<IssueType[]> {
       break;
     }
     logger.debug(`Got issues: ${data.issues.length}`);
-
-    // console.log(JSON.stringify(data.issues, null, 2));
-    await fs.promises.writeFile('raw.json', JSON.stringify(data, null, 2), {
-      encoding: 'utf8',
-    });
 
     for (const issue of data.issues) {
       if (

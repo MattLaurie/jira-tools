@@ -23,7 +23,7 @@
     "generate": "pnpm schema && pnpm /client:.*/",
     "build": "pnpm generate && tsdown",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path .prettierignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"
   },
