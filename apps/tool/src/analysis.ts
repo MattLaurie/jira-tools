@@ -1,26 +1,35 @@
 import 'dotenv/config';
 
-import * as console from 'node:console';
 import fs from 'node:fs';
 import { Command, InvalidArgumentError } from '@commander-js/extra-typings';
 import {
   differenceInBusinessDays,
   differenceInDays,
+  endOfQuarter,
+  endOfYear,
   format,
   startOfMonth,
   startOfQuarter,
   startOfWeek,
+  startOfYear,
+  subQuarters,
+  subYears,
 } from 'date-fns';
 import * as csv from 'fast-csv';
 
-import { getIssues, IssueType } from './utils/issues';
+import type { IssueType } from './utils/issues';
+import logger from './logger';
+import { getIssues } from './utils/issues';
 
 export const analysis = new Command('analysis');
 
 enum TimePeriod {
-  Week = 'week',
-  Month = 'month',
-  Quarter = 'quarter',
+  CurrentWeek = 'current-week',
+  CurrentMonth = 'current-month',
+  CurrentQuarter = 'current-quarter',
+  PreviousQuarter = 'previous-quarter',
+  CurrentYear = 'current-year',
+  PreviousYear = 'previous-year',
 }
 
 function parseTimePeriod(input: string): TimePeriod {
@@ -37,25 +46,44 @@ function convertTimePeriodJql(period: TimePeriod): {
   endDate: string;
 } {
   const now = new Date();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const formatUTC = (date: Date): string => date.toISOString().split('T')[0]!;
 
-  const endDate = formatUTC(now);
   switch (period) {
-    case TimePeriod.Week:
+    case TimePeriod.CurrentWeek:
       return {
         startDate: formatUTC(startOfWeek(now, { weekStartsOn: 1 })),
-        endDate,
+        endDate: formatUTC(now),
       };
-    case TimePeriod.Month:
+    case TimePeriod.CurrentMonth:
       return {
         startDate: formatUTC(startOfMonth(now)),
-        endDate,
+        endDate: formatUTC(now),
       };
-    case TimePeriod.Quarter:
+    case TimePeriod.CurrentQuarter:
       return {
         startDate: formatUTC(startOfQuarter(now)),
-        endDate,
+        endDate: formatUTC(now),
       };
+    case TimePeriod.PreviousQuarter: {
+      const lastQuarter = subQuarters(now, 1);
+      return {
+        startDate: formatUTC(startOfQuarter(lastQuarter)),
+        endDate: formatUTC(endOfQuarter(lastQuarter)),
+      };
+    }
+    case TimePeriod.CurrentYear:
+      return {
+        startDate: formatUTC(startOfYear(now)),
+        endDate: formatUTC(now),
+      };
+    case TimePeriod.PreviousYear: {
+      const lastYear = subYears(now, 1);
+      return {
+        startDate: formatUTC(startOfYear(lastYear)),
+        endDate: formatUTC(endOfYear(lastYear)),
+      };
+    }
   }
 }
 
@@ -68,7 +96,7 @@ analysis
       .map((v) => `"${v}"`)
       .join(', ')})`,
     parseTimePeriod,
-    TimePeriod.Quarter
+    TimePeriod.CurrentQuarter
   )
   .option('-o, --output <file>', 'the output file')
   .description(
@@ -76,8 +104,19 @@ analysis
   )
   .action(async (project, period, options) => {
     const results: IssueType[] = [];
+
     const stream = csv.format({ headers: true });
-    stream.pipe(fs.createWriteStream(`${project}-output.csv`, 'utf-8'));
+
+    if (options.output) {
+      const timestamp = Date.now();
+      const outputFileCsv =
+        options.output ?? `${project}-${period}-${timestamp}.csv`;
+      // TODO check paths, prevent overrwite
+      logger.info(`Writing output to "${outputFileCsv}"`);
+      stream.pipe(fs.createWriteStream(outputFileCsv, 'utf-8'));
+    } else {
+      stream.pipe(process.stdout);
+    }
 
     const { startDate, endDate } = convertTimePeriodJql(period);
 
@@ -90,32 +129,58 @@ analysis
     const order = `order by resolutiondate DESC`;
     const jql = where.join(' AND ') + ' ' + order;
 
-    console.log('JQL', jql);
+    logger.debug(`JQL: "${jql}"`);
 
     for await (const issues of getIssues(jql)) {
       results.push(...issues);
       for (const issue of issues) {
+        if (['Epic', 'Subtask'].includes(issue.fields.issuetype.name)) {
+          logger.debug(`Skipping "${issue.fields.issuetype.name}" issue`);
+          continue;
+        }
+
         if (issue.fields.status.name === 'Cancelled') {
-          console.log('Skipping cancelled issue');
+          logger.debug('Skipping cancelled issue');
           continue;
         }
 
         const created = issue.fields.created;
         const completed = issue.fields.resolutiondate;
         const inprogress = issue.changelog.histories.find((h) =>
-          h.items.find((i) => {
-            return (
-              i.field === 'status' &&
-              i.fromString === 'To Do' &&
-              ['Uphill', 'In Progress', 'In Review', 'Done', 'Passed'].includes(
-                i.toString ?? ''
-              )
-            );
-          })
+          h.items
+            .filter((item) => item.field === 'status')
+            .find((i) => {
+              const newTicket =
+                i.fromString === 'To Do' &&
+                [
+                  'Uphill',
+                  'In Progress',
+                  'Dev', // BAD
+                  'In Review', // BAD
+                  'Merged', // BAD
+                  'Done', // BAD
+                  'Passed', // BAD
+                  'Testing', // BAD
+                ].includes(i.toString ?? '');
+              const reopened =
+                i.fromString === 'CANCELLED' &&
+                [
+                  'To Do',
+                  'Uphill',
+                  'In Progress',
+                  'Dev', // BAD
+                  'In Review', // BAD
+                  'Merged', // BAD
+                  'Done', // BAD
+                  'Passed', // BAD
+                  'Testing', // BAD
+                ].includes(i.toString ?? '');
+              return newTicket || reopened;
+            })
         )?.created;
 
         if (!inprogress) {
-          console.log(`Unable to find in progress for ${issue.key}`);
+          logger.debug(`Unable to find in progress for ${issue.key}`);
           continue;
         }
 
@@ -133,43 +198,40 @@ analysis
           inprogress
         );
 
+        logger.debug(`Writing issue ${issue.key}`);
+
         stream.write({
           project: issue.fields.project.name,
           key: issue.key,
           type: issue.fields.issuetype.name,
           summary: issue.fields.summary,
           assignee: issue.fields.assignee?.displayName ?? 'Unassigned',
-          parentKey: issue.fields.parent?.key ?? 'Unknown',
-          parentName: issue.fields.parent?.fields.summary ?? 'Unknown',
+          parent_key: issue.fields.parent?.key ?? 'Unknown',
+          parent_name: issue.fields.parent?.fields.summary ?? 'Unknown',
           created: created.toISOString(),
-          createdYearMonth: format(created, 'yyyy-MM'),
-          createdYearWeek: format(created, 'yyyy-ww'),
-          createdWeekStart: startOfWeek(created, {
+          created_year_month: format(created, 'yyyy-MM'),
+          created_year_week: format(created, 'yyyy-ww'),
+          created_week_start: startOfWeek(created, {
             weekStartsOn: 1,
           }).toISOString(),
           completed: completed.toISOString(),
-          completedYearMonth: format(completed, 'yyyy-MM'),
-          completedYearWeek: format(completed, 'yyyy-ww'),
-          completedWeekStart: startOfWeek(completed, {
+          completed_year_month: format(completed, 'yyyy-MM'),
+          completed_year_week: format(completed, 'yyyy-ww'),
+          completed_week_start: startOfWeek(completed, {
             weekStartsOn: 1,
           }).toISOString(),
           inprogress: inprogress.toISOString(),
-          inprogressYearMonth: format(inprogress, 'yyyy-MM'),
-          inprogressYearWeek: format(inprogress, 'yyyy-ww'),
-          inprogressWeekStart: startOfWeek(inprogress, {
+          inprogress_year_month: format(inprogress, 'yyyy-MM'),
+          inprogress_year_week: format(inprogress, 'yyyy-ww'),
+          inprogress_week_start: startOfWeek(inprogress, {
             weekStartsOn: 1,
           }).toISOString(),
-          leadTimeDays,
-          leadTimeBusinessDays,
-          cycleTimeDays,
-          cycleTimeBusinessDays,
+          lead_time_days: leadTimeDays,
+          lead_time_business_days: leadTimeBusinessDays,
+          cycle_time_days: cycleTimeDays,
+          cycle_time_business_days: cycleTimeBusinessDays,
         });
       }
     }
     stream.end();
-
-    const outputFile = options.output ?? `${project}-issues-${Date.now()}.json`;
-    await fs.promises.writeFile(outputFile, JSON.stringify(results, null, 2), {
-      encoding: 'utf8',
-    });
   });

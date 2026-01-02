@@ -23,6 +23,7 @@
     "@blaaah/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "eslint": "catalog:",
+    "jiti": "^2.6.1",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },

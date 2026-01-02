@@ -1,7 +1,10 @@
 import * as console from 'node:console';
+import fs from 'node:fs';
 import { z } from 'zod/v4';
 
 import { Jira } from '@blaaah/jira';
+
+import logger from '../logger';
 
 async function wait(milliseconds: number) {
   let timeoutId: NodeJS.Timeout | null;
@@ -98,25 +101,62 @@ export async function* getIssues(jql: string): AsyncGenerator<IssueType[]> {
       },
     });
     if (response.status !== 200 || !data) {
-      console.log('No response', { status: response.status, data });
+      logger.error('No response', { status: response.status, data });
       break;
     }
     if (!data.issues) {
-      console.log('No issues');
+      logger.debug('No issues');
       break;
     }
-    console.log(`Got issues: ${data.issues.length}`);
+    logger.debug(`Got issues: ${data.issues.length}`);
+
+    // console.log(JSON.stringify(data.issues, null, 2));
+    await fs.promises.writeFile('raw.json', JSON.stringify(data, null, 2), {
+      encoding: 'utf8',
+    });
+
+    for (const issue of data.issues) {
+      if (
+        issue.changelog?.total !== undefined &&
+        issue.changelog.maxResults !== undefined &&
+        issue.changelog.total > issue.changelog.maxResults
+      ) {
+        logger.debug(
+          `Issue ${issue.key} has more than ${issue.changelog.maxResults} changelog entries, pulling remainder`
+        );
+
+        let nextChangelogPageToken: string | undefined = undefined;
+
+        // Clear out the current changes because Jira API is weird.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        issue.changelog.histories!.length = 0;
+        do {
+          const { data } = await client.getChangeLogs({
+            query: {},
+            path: {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              issueIdOrKey: issue.key!,
+            },
+          });
+          if (!data?.values) {
+            break;
+          }
+          issue.changelog.histories?.push(...data.values);
+          nextChangelogPageToken = data.nextPage;
+        } while (nextChangelogPageToken !== undefined);
+      }
+    }
 
     const results = z.array(IssueSchema).safeParse(data.issues);
     if (!results.success) {
-      console.log(`Error parsing issues`, results.error.message);
+      logger.error(`Error parsing issues`, results.error.message);
       break;
     }
 
     yield results.data;
     nextPageToken = data.nextPageToken;
     if (nextPageToken !== undefined) {
-      console.log('Waiting for 100ms.');
+      logger.debug('Waiting for 100ms.');
       await wait(100);
     }
   } while (nextPageToken !== undefined);
