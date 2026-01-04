@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import { z } from 'zod/v4';
 
 import { Jira } from '@blaaah/jira';

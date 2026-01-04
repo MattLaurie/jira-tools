@@ -210,19 +210,19 @@ analysis
           parent_name: issue.fields.parent?.fields.summary ?? 'Unknown',
           created: created.toISOString(),
           created_year_month: format(created, 'yyyy-MM'),
-          created_year_week: format(created, 'yyyy-ww'),
+          created_year_week: format(created, 'RRRR-II'),
           created_week_start: startOfWeek(created, {
             weekStartsOn: 1,
           }).toISOString(),
           completed: completed.toISOString(),
           completed_year_month: format(completed, 'yyyy-MM'),
-          completed_year_week: format(completed, 'yyyy-ww'),
+          completed_year_week: format(completed, 'RRRR-II'),
           completed_week_start: startOfWeek(completed, {
             weekStartsOn: 1,
           }).toISOString(),
           inprogress: inprogress.toISOString(),
           inprogress_year_month: format(inprogress, 'yyyy-MM'),
-          inprogress_year_week: format(inprogress, 'yyyy-ww'),
+          inprogress_year_week: format(inprogress, 'RRRR-II'),
           inprogress_week_start: startOfWeek(inprogress, {
             weekStartsOn: 1,
           }).toISOString(),
